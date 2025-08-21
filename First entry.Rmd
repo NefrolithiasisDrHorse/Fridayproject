@@ -6,16 +6,12 @@ date: "2025-08-21"
 
 ```{r}
 # Option 1: tidytuesdayR package 
-install.packages("tidytuesdayR")
 
-tuesdata <- tidytuesdayR::tt_load('2025-02-04')
+
+
+tuesdata <- tidytuesdayR::tt_load('2025-04-15')
 ```
-```{r}
-simpsons_characters <- tuesdata$simpsons_characters
-simpsons_episodes <- tuesdata$simpsons_episodes
-simpsons_locations <- tuesdata$simpsons_locations
-simpsons_script_lines <- tuesdata$simpsons_script_lines
-```
+
 
 
 ```{r}
@@ -29,5 +25,17 @@ library(gifski)
 library(magick)
 ```
 
+```{r}
+hex_gg = ggplot(simpsons_locations, aes(x =  neuroticism, y = extraversion)) +
+    stat_bin_hex(aes(fill = after_stat(density), colour = after_stat(density)), 
+                 bins = 10,
+                 size = 1) +
+    scale_fill_viridis_c(option = "B") +
+    scale_color_viridis_c(option = "B", guide = "none") +
+    labs(x = "Neuroticism", y = "Extraversion", fill = "",
+         colour = "") +
+    theme_minimal()
+hex_gg
+```
 
 
