@@ -1,0 +1,19 @@
+---
+title: "Datamanagement - Project Adv R"
+output: html_document
+date: "2025-08-21"
+---
+
+```{r}
+# Option 1: tidytuesdayR package 
+
+library(tidytuesdayR)
+
+tuesdata <- tidytuesdayR::tt_load('2025-06-24')
+
+cases_month <- tuesdata$cases_month
+cases_year <- tuesdata$cases_year
+```
+
+
+
