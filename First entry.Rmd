@@ -1,0 +1,33 @@
+---
+title: "Datamanagement - Project Adv R"
+output: html_document
+date: "2025-08-21"
+---
+
+```{r}
+# Option 1: tidytuesdayR package 
+install.packages("tidytuesdayR")
+
+tuesdata <- tidytuesdayR::tt_load('2025-02-04')
+```
+```{r}
+simpsons_characters <- tuesdata$simpsons_characters
+simpsons_episodes <- tuesdata$simpsons_episodes
+simpsons_locations <- tuesdata$simpsons_locations
+simpsons_script_lines <- tuesdata$simpsons_script_lines
+```
+
+
+```{r}
+str(simpsons_characters)
+```
+```{r}
+library(rayshader)
+library(rgl)
+library(av)
+library(gifski)
+library(magick)
+```
+
+
+
