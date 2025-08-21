@@ -18,7 +18,7 @@ cases_year <- tuesdata$cases_year
 
 
 
-```{r}
+```{r, include=FALSE}
 #We start by loading our packages
 
 library(rayshader) 
