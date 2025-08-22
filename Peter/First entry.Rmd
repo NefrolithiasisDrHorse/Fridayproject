@@ -45,9 +45,9 @@ names(cases_year)
 ```{r}
 #Recoding regions for OUR understanding
 cases_year <- cases_year %>% 
-  mutate(region = recode(region, `AFRO` = "African Region", `AMRO` = "Regon of Americas", `EMRO` = "Eastern Mediterraenean Region", `EURO` = "European Region", `SEARO` = "Sout-East Asian Region", `WPRO` = "Western Pacific Region"))
+  mutate(region = recode(region, `AFRO` = "African Region", `AMRO` = "Region of Americas", `EMRO` = "Eastern Mediterraenean Region", `EURO` = "European Region", `SEARO` = "Sout-East Asian Region", `WPRO` = "Western Pacific Region"))
 cases_month <- cases_month %>% 
-  mutate(region = recode(region, `AFR` = "African Region", `AMR` = "Regon of Americas", `EMR` = "Eastern Mediterraenean Region", `EUR` = "European Region", `SEAR` = "Sout-East Asian Region", `WPR` = "Western Pacific Region"))
+  mutate(region = recode(region, `AFR` = "African Region", `AMR` = "Region of Americas", `EMR` = "Eastern Mediterraenean Region", `EUR` = "European Region", `SEAR` = "Sout-East Asian Region", `WPR` = "Western Pacific Region"))
 ```
 
 
@@ -66,7 +66,7 @@ ggplot(aes(x = year, y = avg_inc)) + #inserting mapping-argument in overall ggpl
   theme_bw() +
   labs(title = "Avg. measles incidence rate worldwide \n(pr. 1,000,000)", x = "Year", y = "Avg. Incidence Rate") + #Notice the \n for changing                                                                                                                      #line
   geom_smooth() +
-  geom_text(aes(label = round(avg_inc)), vjust = 1.5, size = 3)
+  geom_text(aes(label = round(avg_inc)), vjust = 1.5, size = 3) #Putting avg_incidence text for each point and adjusting size and position
 ```
 
 
@@ -86,7 +86,7 @@ ggplot() +
   theme(strip.text = element_text(
     color = "white"),
         strip.background = element_rect(
-    fill = "grey20"))
+    fill = "grey20")) #Changing the top bar colour and the text color 
 
 ggplotly(plotfacet)
   
@@ -136,9 +136,11 @@ cases_month %>%
   labs(x = "Suspected cases of measles", y = "Laboratory confirmed cases of measles", color = "Region")
   
   
-  cases_month %>%
+europetest <- cases_month %>%
   mutate(region = as.factor(region)) %>% 
-  filter(region == "European Region") %>% 
+  filter(region == "European Region")
+
+europetest %>% 
   ggplot(aes(x = measles_suspect, y = measles_lab_confirmed, color = region)) +
   geom_point() + 
   facet_wrap(~region) + 
@@ -148,6 +150,18 @@ cases_month %>%
   
   
 ```
+
+```{r}
+europetest %>% 
+  filter(iso3 == "KAZ") %>% 
+  arrange(desc(measles_lab_confirmed), measles_suspect) %>% 
+  select(country, measles_suspect, measles_lab_confirmed, measles_clinical, year) %>% 
+  print(n = 20)
+```
+
+
+
+
 
 ```{r, message=FALSE}
 library(gganimate)
@@ -179,21 +193,29 @@ map_data <- left_join(world,cases_year_gif, by = c("name" = "country"))
 ```{r}
 #Creating an interactive world-map showing incidence by country pr. year by color-coding. 
 library(plotly)
+library(viridisLite)
 fig <- plot_geo(cases_year_gif) %>%
   add_trace(
     z = ~avg_country,
     color = ~avg_country,
-    colors = "Reds",
-    text = ~country,
+    colors = viridis(256, option = "D"),
+    text = ~paste0(country, "<br>Incidence: ", avg_country),
     locations = ~country,
     locationmode = "country names",
     frame = ~year
   ) %>%
   colorbar(title = "Incidence")
-fig
+fig %>% 
+  layout(
+    title = "Measles Incidence by Country per Year",
+  geo = list(
+    projection = list(type = 'natural earth'),
+    showland = TRUE,
+    landcolor = 'rgb(230, 230, 230)',
+    lakecolor = 'rgb(255, 255, 255)',
+    showcountries = TRUE
+  )
+) 
 ```
-
-
-
 
 
