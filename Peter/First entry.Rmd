@@ -20,7 +20,7 @@ library(hrbrthemes) #For better ggplot-themes
 ```
 
 
-```{r, results='hide', message=FALSE}
+```{r, message=FALSE}
 #First we load our data into our environment
 
 library(tidytuesdayR) #Specific package for loading tidy-tuesday data
@@ -29,6 +29,8 @@ tuesdata <- tidytuesdayR::tt_load('2025-06-24')
 
 cases_month <- tuesdata$cases_month #Loading datasets into environment
 cases_year <- tuesdata$cases_year   #Loading datasets into environment
+
+dim(cases_year)
 ```
 
 
@@ -55,7 +57,7 @@ unique(cases_month$region)
 
 
 ```{r, message=FALSE}
-#First we want to look at the overall average incidence rate pr. year worlwide
+#First we want to look at the overall average incidence rate pr. year worldwide
 cases_year %>%
   group_by(year) %>% #Grouping by year
   mutate(avg_inc = mean(measles_incidence_rate_per_1000000_total_population)) %>% #Creating new variable with mutate
@@ -63,7 +65,8 @@ ggplot(aes(x = year, y = avg_inc)) + #inserting mapping-argument in overall ggpl
   geom_point() +
   theme_bw() +
   labs(title = "Avg. measles incidence rate worldwide \n(pr. 1,000,000)", x = "Year", y = "Avg. Incidence Rate") + #Notice the \n for changing                                                                                                                      #line
-  geom_smooth()
+  geom_smooth() +
+  geom_text(aes(label = round(avg_inc)), vjust = 1.5, size = 3)
 ```
 
 
@@ -83,8 +86,7 @@ ggplot() +
   theme(strip.text = element_text(
     color = "white"),
         strip.background = element_rect(
-    fill = "grey20",
-    color = "white"))
+    fill = "grey20"))
 
 ggplotly(plotfacet)
   
@@ -148,12 +150,9 @@ cases_month %>%
 ```
 
 ```{r, message=FALSE}
-library(dplyr)
-library(ggplot2)
 library(gganimate)
 library(rnaturalearth)
 library(sf)
-library(magrittr)
 ```
 
 ```{r, message=FALSE}
