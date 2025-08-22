@@ -17,7 +17,11 @@ library(dplyr)
 library(magrittr) #should be included in dplyr, but didn't work?
 library(plotly) #For interactive ggplot
 library(hrbrthemes) #For better ggplot-themes
+library(ComplexHeatmap)
 ```
+
+
+
 
 
 ```{r, message=FALSE}
@@ -219,8 +223,8 @@ fig %>%
 ```
 
 
-```{r}
-
+```{r, message=FALSE, fig.width=10}
+library(tidyr)
 # summarise average incidence per region × year
 cases_year2 <- cases_year %>% 
   group_by(year, region) %>% 
