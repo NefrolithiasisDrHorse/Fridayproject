@@ -8,12 +8,166 @@ date: "2025-08-21"
 # Option 1: tidytuesdayR package 
 
 library(tidytuesdayR)
-
+library(tidyr)
+library(ggplot2)
+library(dplyr)
 tuesdata <- tidytuesdayR::tt_load('2025-06-24')
 
 cases_month <- tuesdata$cases_month
+cases_month
+
+cases_month <- tuesdata$cases_month
 cases_year <- tuesdata$cases_year
+
+```
+
+
+```{r}
+library(ggplot2)
+ggplot(cases_month, aes(x = year, y = measles_suspect)) +
+  geom_bar(stat = "identity")
+
+ggplot(cases_year, aes(x = year, y = measles_total)) +
+  geom_bar(stat = "identity")
+
+  unique(cases_year$year)
+
+
+cases_year %>%
+  group_by(year) %>% 
+  mutate(avg_reg = mean(measles_incidence_rate_per_1000000_total_population))
+
+cases_year %>%
+  group_by(year) %>% 
+  mutate(avg_reg = mean(measles_incidence_rate_per_1000000_total_population)) %>% 
+  ggplot(aes(x = year, y = avg_reg)) + 
+  geom_bar() +
+  theme_bw() +
+  labs(title = "Avg. measles incidence rate worldwide \n(pr. 1,000,000)", x = "Year", y = "Avg. Incidence Rate") +
+geom_bar()
+
+
+```
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+# Example dataset (replace with your data)
+
+cases_country <- cases_year %>%
+  group_by(country) %>%
+  summarise(total_cases = sum(measles_total, na.rm = TRUE))
+unique(cases_year$country)
+
+
+# Plot map
+ggplot(cases_country) +
+  geom_sf(aes(fill = total_cases)) +
+  scale_fill_viridis_c(option ="plasma", na.value = "grey90") +
+  labs(title = "Global Measles Cases by Country",
+       fill = "Cases") +
+  theme_minimal()
+
+
+ggplot(cases_country,aes(measles_suspect,measels_total))+
+  geom_point(stat = "identity")
+
+cases_country[unique(cases_year$region)] 
+a=cases_country[cases_country$country %in% unique(cases_year$region), ]
+
+common_keys <- intersect(unique(cases_country$country),
+                         unique(cases_year$region))
+```
+
+
+```{r}
+
+
+cases_long_S_C_T= cases_month %>% 
+  pivot_longer(cols = c("measles_clinical","measles_suspect","measles_total"),names_to = "case_Type",values_to = "count")
+
+ggplot(cases_month,aes(x = measles_suspect,y))
+
+
+ggplot(cases_long_S_C_T, aes(x = country, y = count, fill = case_type)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Measles Cases by Type",
+       x = "Country",
+       y = "Number of Cases") +
+  theme_minimal() +
+  scale_fill_viridis_d()
+
+ggplot()+
+  geom_point(data=cases_month,mapping=aes(x=measles_suspect,y=measles_clinical))+
+  geom_smooth(data=cases_month,mapping=aes(x=measles_suspect,y=measles_clinical))+
+  facet_wrap(~region)
+
+
+
 ```
 
 
 
+  
+```{r}
+  
+library(tidyverse)
+library(here)
+library(readxl)
+library(janitor)
+
+
+count_S_C_T <- data.frame(
+  scymptoms = sum(cases_month$measles_suspect, na.rm = TRUE),
+  Total     = sum(cases_month$measles_total, na.rm = TRUE),
+  clinical_approved=sum(cases_month$measles_lab_confirmed))
+
+count_S_C_T_long <- count_S_C_T |>
+  pivot_longer(cols = everything(),
+               names_to = "Category",
+               values_to = "Count")
+ggplot()+
+  geom_bar(count_S_C_T,aes(x=category,Y=Count))
+
+
+ggplot(count_S_C_T_long, aes(x = Category, y = Count, fill = Category)) +
+  geom_col() +
+  theme_minimal() +
+  labs(title = "Measles Case Summary",
+       x = "Category",
+       y = "Count")
+
+piv=cases_month %>% 
+  pivot_longer(cols = c(measles_total,measles_suspect),
+                 names_to = "category",
+                 values_to = "Count") 
+
+  filter(category %in% c("measles_total","measles_suspect"))
+  
+  piv <- cases_month %>%
+  select(measles_total, measles_suspect) %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = "category",
+    values_to = "Count"
+  ) 
+      
+    
+    ggplot(data = piv, aes(x = category, y = Count)) +
+  geom_boxplot()
+```
+  colnames(piv)
+  
+  ggplot()+
+    geom_boxplot(piv,x=category,y=Count)
+  
+
+  
+  
+  
+  
+  
