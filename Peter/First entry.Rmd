@@ -4,7 +4,7 @@ output: html_document
 date: "2025-08-21"
 ---
 
-```{r, include=FALSE}
+```{r, results='hide', message=FALSE}
 #First we load our data into our environment
 
 library(tidytuesdayR) 
@@ -17,7 +17,7 @@ cases_year <- tuesdata$cases_year   #Loading datasets into environment
 
 
 
-```{r, include=FALSE}
+```{r, message=FALSE}
 #We start by loading our packages
 
 library(rayshader) 
@@ -45,7 +45,12 @@ names(cases_year)
 cases_year <- cases_year %>% 
   mutate(region = recode(region, `AFRO` = "African Region", `AMRO` = "Regon of Americas", `EMRO` = "Eastern Mediterraenean Region", `EURO` = "European Region", `SEARO` = "Sout-East Asian Region", `WPRO` = "Western Pacific Region"))
 cases_month <- cases_month %>% 
-  mutate(region = recode(region, `AFRO` = "African Region", `AMRO` = "Regon of Americas", `EMRO` = "Eastern Mediterraenean Region", `EURO` = "European Region", `SEARO` = "Sout-East Asian Region", `WPRO` = "Western Pacific Region"))
+  mutate(region = recode(region, `AFR` = "African Region", `AMR` = "Regon of Americas", `EMR` = "Eastern Mediterraenean Region", `EUR` = "European Region", `SEAR` = "Sout-East Asian Region", `WPR` = "Western Pacific Region"))
+```
+
+
+```{r}
+unique(cases_month$region)
 ```
 
 
@@ -117,5 +122,37 @@ cases_month %>%
   theme_bw() + 
   labs(x = "Suspected cases of measles", y = "Laboratory confirmed cases of measles", color = "Region")
   
+```
+
+```{r}
+cases_year1 <- cases_month %>%
+  filter(region=="European Region") %>% 
+  group_by(year) %>% 
+  mutate(sum_year_sus = sum(measles_suspect, na.rm=TRUE),
+         sum_year_con = sum(measles_lab_confirmed, na.rm = TRUE))
+
+cases_year1 %>% 
+  ggplot(aes(x = sum_year_sus, y = sum_year_con, color = year)) +
+  geom_point() + 
+  theme_bw() + 
+  labs(x = "Suspected cases of measles", y = "Laboratory confirmed cases of measles", color = "Year")
+  
+
+
+```
+
+```{r}
+cases_year2 <- cases_month %>%
+  filter(region=="African Region") %>% 
+  group_by(year) %>% 
+  mutate(sum_year_sus = sum(measles_suspect, na.rm=TRUE),
+         sum_year_con = sum(measles_lab_confirmed, na.rm = TRUE))
+
+cases_year2 %>% 
+  ggplot(aes(x = sum_year_sus, y = sum_year_con, color = year), asp=1) +
+  geom_point() + 
+  theme_bw() + 
+  labs(x = "Suspected cases of measles", y = "Laboratory confirmed cases of measles", color = "Year") 
+
 ```
 
