@@ -219,3 +219,33 @@ fig %>%
 ```
 
 
+```{r}
+
+# summarise average incidence per region × year
+cases_year2 <- cases_year %>% 
+  group_by(year, region) %>% 
+  summarise(avg_reg = mean(measles_incidence_rate_per_1000000_total_population, na.rm = TRUE))
+
+# pivot to wide format for heatmap
+cases_wide <- cases_year2 %>%
+  pivot_wider(names_from = year, values_from = avg_reg)
+
+# convert to matrix
+mat <- as.matrix(cases_wide[,-1])   # remove "region"
+rownames(mat) <- cases_wide$region  # set rownames to regions
+
+# Heatmap
+Heatmap(mat,
+        name = "Measles Incidence",
+        col = viridis::viridis(100),
+        cluster_rows = F,
+        cluster_columns = F,border = T,
+        rect_gp = gpar(col = "white", lwd = 1.5),
+        column_title = "Heatmap to show measiles Incident per year per region ")
+
+
+
+```
+
+
+

@@ -41,10 +41,10 @@ cases_year %>%
   group_by(year) %>% 
   mutate(avg_reg = mean(measles_incidence_rate_per_1000000_total_population)) %>% 
   ggplot(aes(x = year, y = avg_reg)) + 
-  geom_bar() +
+  geom_point() +
   theme_bw() +
   labs(title = "Avg. measles incidence rate worldwide \n(pr. 1,000,000)", x = "Year", y = "Avg. Incidence Rate") +
-geom_bar()
+  geom_smooth()
 
 
 ```
@@ -81,6 +81,17 @@ a=cases_country[cases_country$country %in% unique(cases_year$region), ]
 
 common_keys <- intersect(unique(cases_country$country),
                          unique(cases_year$region))
+
+cases_year %>%
+  group_by(year) %>% 
+  mutate(avg_reg = mean(measles_total)) %>% 
+  ggplot(aes(x = year, y = avg_reg)) + 
+  geom_point() +
+  theme_bw() +
+  labs(title = "Avg. measles incidence rate worldwide \n(pr. 1,000,000)", x = "Year", y = "Avg. Incidence Rate") +
+  geom_smooth()
+
+
 ```
 
 
@@ -119,6 +130,7 @@ library(tidyverse)
 library(here)
 library(readxl)
 library(janitor)
+library("plotly")
 
 
 count_S_C_T <- data.frame(
@@ -160,14 +172,223 @@ piv=cases_month %>%
     ggplot(data = piv, aes(x = category, y = Count)) +
   geom_boxplot()
 ```
-  colnames(piv)
+
+
+
+```{r, include=FALSE}
+#First we load our data into our environment
+
+library(tidytuesdayR) 
+
+tuesdata <- tidytuesdayR::tt_load('2025-06-24') 
+
+cases_month <- tuesdata$cases_month #Loading datasets into environment
+cases_year <- tuesdata$cases_year   #Loading datasets into environment
+```
+
+
+
+```{r, include=FALSE}
+#We start by loading our packages
+
+library(rayshader) 
+library(rgl)
+library(av)
+library(gifski)
+library(magick) #The first five are just for the 3d-model gif. 
+library(ggplot2)
+library(dplyr)
+library(magrittr) #should be included in dplyr, but didnt work?
+library(plotly) #For interactive ggplot
+```
+
+
+
+```{r}
+#Looking at variable names
+names(cases_month)
+names(cases_year)
+```
+
+
+```{r}
+#Recoding regions for OUR understanding
+cases_year <- cases_year %>% 
+  mutate(region = recode(region, `AFRO` = "African Region", `AMRO` = "Regon of Americas", `EMRO` = "Eastern Mediterraenean Region", `EURO` = "European Region", `SEARO` = "Sout-East Asian Region", `WPRO` = "Western Pacific Region"))
+cases_month <- cases_month %>% 
+  mutate(region = recode(region, `AFRO` = "African Region", `AMRO` = "Regon of Americas", `EMRO` = "Eastern Mediterraenean Region", `EURO` = "European Region", `SEARO` = "Sout-East Asian Region", `WPRO` = "Western Pacific Region"))
+```
+
+
+```{r, message=FALSE}
+#First we want to look at the overall average incidence rate pr. year worlwide
+cases_year %>%
+  group_by(year) %>% #Grouping by year
+  mutate(avg_reg = mean(measles_incidence_rate_per_1000000_total_population)) %>% #Creating new variable with mutate
+ggplot(aes(x = year, y = avg_reg)) + #inserting mapping-argument in overall ggplot for less typing
+  geom_point() +
+  theme_bw() +
+  labs(title = "Avg. measles incidence rate worldwide \n(pr. 1,000,000)", x = "Year", y = "Avg. Incidence Rate") + #Notice the \n for changing                                                                                                                      #line
+  geom_smooth()
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+#Now we want to facet by region. We supress warnings and messages in the output in the first row. 
+plotfacet <- cases_year %>%
+  group_by(year, region) %>%    #We group by year AND region so we get an annual avg. pr. region
+  mutate(avg_reg = mean(measles_incidence_rate_per_1000000_total_population)) %>% 
+ggplot() + 
+  geom_point(aes(x = year, y = avg_reg, colour = region, shape = region)) +
+  theme_bw() +
+  labs(title = "Avg. measles incidence rate pr. region pr. year(pr. 1,000,000)", x = "Year", y = "Avg. Incidence Rate", color = "Region", shape = "Region") +
+  geom_smooth(aes(x = year, y = avg_reg), color = "grey", se=FALSE, show.legend = FALSE) + 
+  facet_wrap(~ region, scales = "free") +
+  geom_line(aes(x = year, y = avg_reg, colour = region, shape = region))
+
+ggplotly(plotfacet)
   
-  ggplot()+
-    geom_boxplot(piv,x=category,y=Count)
-  
+```
+
+
+
+
+
+
+```{r}
+cases_year1 <- cases_year %>% 
+  group_by(year, country) %>% 
+  mutate(avg_reg = mean(measles_incidence_rate_per_1000000_total_population)) 
+
+hexgg <-  ggplot(cases_year1, aes(x =  year, y = avg_reg)) +
+    stat_bin_hex(aes(fill = after_stat(density), colour = after_stat(density)), 
+                 bins = 10,
+                 linewidth = 1) +
+    scale_fill_viridis_c(option = "B") +
+    scale_color_viridis_c(option = "B", guide = "none") +
+    labs(x = "Year", y = "Avg. incidence rate pr. region", fill = "",
+         colour = "") +
+    theme_minimal()
+  facet_wrap(~region)
+hexgg
+
+
+```
+
+```{r,width =8,height=6}
+
+library(ComplexHeatmap)
+library(dplyr)
+
+cases_year2 <- cases_year %>% 
+  group_by(year, country,region) %>% 
+  mutate(avg_reg = mean(measles_incidence_rate_per_1000000_total_population)) 
+
+cases_year2_<-cases_year2 %>% select(c("year","region","avg_reg"))
+cases_wide <- pivot_wider(cases_year2_, names_from = year, values_from = avg_reg)
+cases_wide[-1]
+cases_wide=t(cases_wide)
+rownames(cases_wide)=cases_wide$
+print(cases_wide)
+
+Heatmap(cases_year2_,
+        name = "Measles Cases",
+        col = viridis::viridis(100),
+        cluster_rows = FALSE,
+        cluster_columns = FALSE)
+
+
+
+
+
+###
+
+# Step 1: summarise average incidence per region × year
+cases_year2 <- cases_year %>% 
+  group_by(year, region) %>% 
+  summarise(avg_reg = mean(measles_incidence_rate_per_1000000_total_population, na.rm = TRUE))
+
+# Step 2: pivot to wide format for heatmap
+cases_wide <- cases_year2 %>%
+  pivot_wider(names_from = year, values_from = avg_reg)
+
+# Step 3: convert to matrix
+mat <- as.matrix(cases_wide[,-1])   # remove "region"
+rownames(mat) <- cases_wide$region  # set rownames to regions
+
+# Step 4: Heatmap
+Heatmap(mat,
+        name = "Measles Incidence",
+        col = viridis::viridis(100),
+        cluster_rows = F,
+        cluster_columns = F,border = T,
+        rect_gp = gpar(col = "white", lwd = 1.5),
+        column_title = "Heatmap to show measiles Incident per year per region ")
+
+
+```
+
+
+```{r}
+
+```
+
+
+```{r, message=FALSE, include=FALSE}
+plot_gg(hexgg, multicore = TRUE, windowsize = c(800, 800))
+
+render_movie("silly.gif")
+
+```
+
+```{r, warning=FALSE}
+cases_month %>%
+  mutate(region = as.factor(region)) %>% 
+  ggplot(aes(x = month, y =  measles_suspect, color = month)) +
+  geom_bar() + 
+  theme_bw() + 
+  labs(x = "Suspected cases of measles", y = "Laboratory confirmed cases of measles", color = "Region")
+
+
+cases_year2 %>%
+  ggplot(aes(x = month, y = measles_suspect, fill = month)) +
+  geom_col(position = "dodge") +
+  theme_bw() +
+  labs(x = "Month", 
+       y = "Suspected cases of measles", 
+       fill = "Region")
+
 
   
-  
+```
+
+
+```{r}
+# Example dataset
+df <- data.frame(
+  region = rep(c("AFRO", "AMRO", "EMRO", "EURO", "SEARO", "WPRO"), each = 5),
+  avg_inc = rnorm(30, mean = 100, sd = 20),
+  measles_suspect = rnorm(30, mean = 200, sd = 50),
+  total_cases = rnorm(30, mean = 500, sd = 100)
+)
+
+# Step 1: select only numeric columns for PCA
+df_numeric <- cases_year2 %>% filter(region == "European Region")
+pca_res <- prcomp(df_numeric[, c("measles_incidence_rate_per_1000000_total_population","total_population")], scale. = TRUE)
+pca_df <- as.data.frame(pca_res$x)
+# Step 3: build dataframe for plotting
+pca_df$region <- df_numeric$year
+
+# Step 4: plot PCA
+ggplot(pca_df, aes(x = PC1, y = PC2, color = region)) +
+  geom_point(size = 3, alpha = 0.7) +
+  theme_minimal() +
+  labs(title = "PCA of Measles Data", x = "PC1", y = "PC2")  
+
+
+
+unique(cases_year2$region)
+```
   
   
   
