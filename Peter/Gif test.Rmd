@@ -1,0 +1,89 @@
+---
+title: "Test"
+output: html_document
+date: "2025-08-21"
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(gganimate)
+library(rnaturalearth)
+library(sf)
+library(magrittr)
+```
+
+```{r}
+
+library(tidytuesdayR) 
+
+tuesdata <- tidytuesdayR::tt_load('2025-06-24')
+cases_month <- tuesdata$cases_month #Loading datasets into environment
+cases_year <- tuesdata$cases_year   #Loading datasets into environment
+```
+
+
+```{r}
+# Load world map
+world <- ne_countries(scale = "medium", returnclass = "sf") 
+world <- world %>% 
+  select(name, geometry)
+```
+
+
+```{r}
+cases_year_gif <- cases_year %>% 
+  group_by(year, country) %>% 
+  mutate(avg_country = mean(measles_incidence_rate_per_1000000_total_population))
+```
+
+
+```{r}
+# Join your data to map
+map_data <- left_join(world,cases_year_gif, by = c("name" = "country"))
+```
+
+
+```{r}
+# Animated choropleth
+p <- ggplot(map_data) +
+  geom_sf(aes(fill = avg_country, geometry = geometry)) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  labs(title = "Measles incidence {closest_state}", fill = "Incidence") +
+  theme_minimal() +
+  transition_states(year, transition_length = 1, state_length = 1)
+```
+
+```{r}
+p
+```
+
+
+
+```{r}
+# Save as gif
+animate(p, nframes = 100, fps = 10, width = 800, height = 500, renderer = gifski_renderer("measles.gif"))
+p
+```
+
+
+```{r}
+library(plotly)
+fig <- plot_geo(cases_year_gif) %>%
+  add_trace(
+    z = ~avg_country,
+    color = ~avg_country,
+    colors = "Reds",
+    text = ~country,
+    locations = ~country,
+    locationmode = "country names",
+    frame = ~year
+  ) %>%
+  colorbar(title = "Incidence")
+fig
+```
+
+
+
+
+

@@ -4,19 +4,6 @@ output: html_document
 date: "2025-08-21"
 ---
 
-```{r, results='hide', message=FALSE}
-#First we load our data into our environment
-
-library(tidytuesdayR) 
-
-tuesdata <- tidytuesdayR::tt_load('2025-06-24') 
-
-cases_month <- tuesdata$cases_month #Loading datasets into environment
-cases_year <- tuesdata$cases_year   #Loading datasets into environment
-```
-
-
-
 ```{r, message=FALSE}
 #We start by loading our packages
 
@@ -25,10 +12,23 @@ library(rgl)
 library(av)
 library(gifski)
 library(magick) #The first five are just for the 3d-model gif. 
-library(ggplot2)
+library(ggplot2) 
 library(dplyr)
-library(magrittr) #should be included in dplyr, but didnt work?
+library(magrittr) #should be included in dplyr, but didn't work?
 library(plotly) #For interactive ggplot
+library(hrbrthemes) #For better ggplot-themes
+```
+
+
+```{r, results='hide', message=FALSE}
+#First we load our data into our environment
+
+library(tidytuesdayR) #Specific package for loading tidy-tuesday data
+
+tuesdata <- tidytuesdayR::tt_load('2025-06-24') 
+
+cases_month <- tuesdata$cases_month #Loading datasets into environment
+cases_year <- tuesdata$cases_year   #Loading datasets into environment
 ```
 
 
@@ -58,8 +58,8 @@ unique(cases_month$region)
 #First we want to look at the overall average incidence rate pr. year worlwide
 cases_year %>%
   group_by(year) %>% #Grouping by year
-  mutate(avg_reg = mean(measles_incidence_rate_per_1000000_total_population)) %>% #Creating new variable with mutate
-ggplot(aes(x = year, y = avg_reg)) + #inserting mapping-argument in overall ggplot for less typing
+  mutate(avg_inc = mean(measles_incidence_rate_per_1000000_total_population)) %>% #Creating new variable with mutate
+ggplot(aes(x = year, y = avg_inc)) + #inserting mapping-argument in overall ggplot for less typing
   geom_point() +
   theme_bw() +
   labs(title = "Avg. measles incidence rate worldwide \n(pr. 1,000,000)", x = "Year", y = "Avg. Incidence Rate") + #Notice the \n for changing                                                                                                                      #line
@@ -67,7 +67,8 @@ ggplot(aes(x = year, y = avg_reg)) + #inserting mapping-argument in overall ggpl
 ```
 
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, fig.width=10, fig.height=5}
+
 #Now we want to facet by region. We supress warnings and messages in the output in the first row. 
 plotfacet <- cases_year %>%
   group_by(year, region) %>%    #We group by year AND region so we get an annual avg. pr. region
@@ -78,7 +79,12 @@ ggplot() +
   labs(title = "Avg. measles incidence rate pr. region pr. year(pr. 1,000,000)", x = "Year", y = "Avg. Incidence Rate", color = "Region", shape = "Region") +
   geom_smooth(aes(x = year, y = avg_reg), color = "grey", se=FALSE, show.legend = FALSE) + 
   facet_wrap(~ region, scales = "free") +
-  geom_line(aes(x = year, y = avg_reg, colour = region, shape = region))
+  geom_line(aes(x = year, y = avg_reg, colour = region, shape = region)) + 
+  theme(strip.text = element_text(
+    color = "white"),
+        strip.background = element_rect(
+    fill = "grey20",
+    color = "white"))
 
 ggplotly(plotfacet)
   
@@ -106,14 +112,19 @@ hexgg <-  ggplot(cases_year1, aes(x =  year, y = avg_reg)) +
 hexgg
 ```
 
-```{r, message=FALSE, include=FALSE}
+```{r, message=FALSE, results='hide'}
 plot_gg(hexgg, multicore = TRUE, windowsize = c(800, 800))
 
 render_movie("silly.gif")
 
 ```
 
-```{r, warning=FALSE}
+```{r}
+knitr::include_graphics('C:/Users/au483794/OneDrive - Aarhus universitet/Documents/Fridayproject/Peter/silly.gif')
+```
+
+
+```{r, warning=FALSE, fig.width=10, fig.height=5}
 cases_month %>%
   mutate(region = as.factor(region)) %>% 
   ggplot(aes(x = measles_suspect, y = measles_lab_confirmed, color = region)) +
@@ -122,37 +133,68 @@ cases_month %>%
   theme_bw() + 
   labs(x = "Suspected cases of measles", y = "Laboratory confirmed cases of measles", color = "Region")
   
-```
-
-```{r}
-cases_year1 <- cases_month %>%
-  filter(region=="European Region") %>% 
-  group_by(year) %>% 
-  mutate(sum_year_sus = sum(measles_suspect, na.rm=TRUE),
-         sum_year_con = sum(measles_lab_confirmed, na.rm = TRUE))
-
-cases_year1 %>% 
-  ggplot(aes(x = sum_year_sus, y = sum_year_con, color = year)) +
-  geom_point() + 
-  theme_bw() + 
-  labs(x = "Suspected cases of measles", y = "Laboratory confirmed cases of measles", color = "Year")
   
+  cases_month %>%
+  mutate(region = as.factor(region)) %>% 
+  filter(region == "European Region") %>% 
+  ggplot(aes(x = measles_suspect, y = measles_lab_confirmed, color = region)) +
+  geom_point() + 
+  facet_wrap(~region) + 
+  theme_bw() + 
+  labs(x = "Suspected cases of measles", y = "Laboratory confirmed cases of measles", color = "Region") + 
+  coord_fixed()
+  
+  
+```
+
+```{r, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(gganimate)
+library(rnaturalearth)
+library(sf)
+library(magrittr)
+```
+
+```{r, message=FALSE}
+# Load world map
+world <- ne_countries(scale = "medium", returnclass = "sf") 
+world <- world %>% 
+  select(name, geometry)
+```
 
 
+```{r}
+#Calculating avg. incidente pr. 1,000,000 pr. country pr. year. 
+cases_year_gif <- cases_year %>% 
+  group_by(year, country) %>% 
+  mutate(avg_country = mean(measles_incidence_rate_per_1000000_total_population))
+```
+
+
+```{r}
+# Joining data to map
+map_data <- left_join(world,cases_year_gif, by = c("name" = "country"))
 ```
 
 ```{r}
-cases_year2 <- cases_month %>%
-  filter(region=="African Region") %>% 
-  group_by(year) %>% 
-  mutate(sum_year_sus = sum(measles_suspect, na.rm=TRUE),
-         sum_year_con = sum(measles_lab_confirmed, na.rm = TRUE))
-
-cases_year2 %>% 
-  ggplot(aes(x = sum_year_sus, y = sum_year_con, color = year), asp=1) +
-  geom_point() + 
-  theme_bw() + 
-  labs(x = "Suspected cases of measles", y = "Laboratory confirmed cases of measles", color = "Year") 
-
+#Creating an interactive world-map showing incidence by country pr. year by color-coding. 
+library(plotly)
+fig <- plot_geo(cases_year_gif) %>%
+  add_trace(
+    z = ~avg_country,
+    color = ~avg_country,
+    colors = "Reds",
+    text = ~country,
+    locations = ~country,
+    locationmode = "country names",
+    frame = ~year
+  ) %>%
+  colorbar(title = "Incidence")
+fig
 ```
+
+
+
+
 
